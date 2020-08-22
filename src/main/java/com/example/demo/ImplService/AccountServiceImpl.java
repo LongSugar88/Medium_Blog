@@ -2,28 +2,51 @@ package com.example.demo.ImplService;
 
 import com.example.demo.iService.IAccountService;
 import com.example.demo.model.Account;
+import com.example.demo.model.CustomUserDetails;
+import com.example.demo.repository.IAccountRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public class AccountServiceImpl implements IAccountService {
+@Service
+public class AccountServiceImpl implements IAccountService, UserDetailsService {
+    @Autowired
+    IAccountRepository iAccountRepository;
+
     @Override
     public Account save(Account account) {
-        return null;
+        return iAccountRepository.save(account);
     }
 
     @Override
     public Iterable<Account> findAll() {
-        return null;
+        return iAccountRepository.findAll();
     }
 
     @Override
     public Account findOne(Long id) {
-        return null;
+        return iAccountRepository.findById(id).get();
     }
 
     @Override
     public Account findAccountsByEmail(String email) {
-        return null;
+        return iAccountRepository.findAccountsByEmail(email);
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        Account account = iAccountRepository.findAccountsByEmail(email);
+        if (account == null) {
+            throw new UsernameNotFoundException(email);
+        }
+        return new CustomUserDetails(account);
     }
 
     @Override
@@ -33,7 +56,7 @@ public class AccountServiceImpl implements IAccountService {
 
     @Override
     public Account findAccountByEmail(String email) {
-        return null;
+        return iAccountRepository.findAccountsByEmail(email);
     }
 
     @Override

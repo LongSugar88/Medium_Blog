@@ -23,4 +23,6 @@ public interface IAccountService {
 
 
     List<Account> getAllAccountLikedThisComment(Long comment_id);
+
+
 }
