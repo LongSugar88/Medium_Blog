@@ -1,6 +1,8 @@
 package com.example.demo.jwt;
 
+import com.example.demo.model.Account;
 import io.jsonwebtoken.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
@@ -11,6 +13,7 @@ import java.util.function.Function;
 import java.util.logging.Logger;
 
 @Service
+@Slf4j
 public class JwtUntil {
     private final String JWT_SECRET = "myBlog";
     // Đoạn JWT_SECRET này là bí mật, chỉ có phía server biết
@@ -40,34 +43,39 @@ public class JwtUntil {
     }
 
     public String generateToken(String email) {
-        Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, email);
-    }
-
-    private String createToken(Map<String, Object> claims, String subject) {
         Date now = new Date();
-
+        Date expiryDate = new Date(now.getTime() + JWT_EXPIRATION);
+        // Tạo chuỗi json web token từ email của user.
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(subject)
+                .setSubject(email)
                 .setIssuedAt(now)
-                .setExpiration(new Date(System.currentTimeMillis() + JWT_EXPIRATION))
-                .signWith(SignatureAlgorithm.HS256, JWT_SECRET)
+                .setExpiration(expiryDate)
+                .signWith(SignatureAlgorithm.HS512, JWT_SECRET)
                 .compact();
     }
+    // Lấy thông tin user từ jwt
+    public String  getUserIdFromJWT(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(JWT_SECRET)
+                .parseClaimsJws(token)
+                .getBody();
 
-    public Boolean validateToken(String token, UserDetails userDetails) {
-        try{
-            final String username = extractUsername(token);
-            return (username.equals(userDetails.getUsername()) && !isTokenExpired(token));
-        }catch (MalformedJwtException malEx){
-            Logger.getLogger("Invalid JWT token");
-        }catch (ExpiredJwtException exJwt){
-            Logger.getLogger("Expired JWT token");
-        }catch (UnsupportedJwtException unJwt){
-            Logger.getLogger("Unsupported JWT token");
+        return claims.getSubject();
+    }
+
+    public boolean validateToken(String authToken) {
+        try {
+            Jwts.parser().setSigningKey(JWT_SECRET).parseClaimsJws(authToken);
+            return true;
+        } catch (MalformedJwtException ex) {
+            log.error("Invalid JWT token");
+        } catch (ExpiredJwtException ex) {
+            log.error("Expired JWT token");
+        } catch (UnsupportedJwtException ex) {
+            log.error("Unsupported JWT token");
+        } catch (IllegalArgumentException ex) {
+            log.error("JWT claims string is empty.");
         }
         return false;
-
     }
 }
